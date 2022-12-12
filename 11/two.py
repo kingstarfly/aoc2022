@@ -7,7 +7,7 @@ from typing import Optional
 
 here = Path(__file__)
 
-with open(here.parent / "test.txt") as f:
+with open(here.parent / "input.txt") as f:
     lines = f.readlines()
     lines = [line.strip() for line in lines]
 
@@ -35,7 +35,7 @@ class Monkey:
         self.targetIfTrue = monkeys[int(lines[4].strip().split(" ")[-1])]
         self.targetIfFalse = monkeys[int(lines[5].strip().split(" ")[-1])]
         
-    def takeOneTurn(self):
+    def takeOneTurn(self, modulo_limit: int = 0):
         self.numberItemsInspected += len(self.items)
 
         while self.items:
@@ -44,8 +44,8 @@ class Monkey:
             # use eval() to evaluate the expression
             new = eval(self.operation.replace("old", str(item)))
 
-            # Divide by 3 and round down to nearest integer.
-            new = new // 3
+            if modulo_limit > 0:
+                new = new % modulo_limit
 
             if self.testCondition(new):
                 self.targetIfTrue.receiveItem(new)
@@ -74,11 +74,18 @@ for i in range(numMonkeys):
 for i in range(numMonkeys):
     monkeys[i].parseLines(lines[i * 7 : (i + 1) * 7])
 
-    
-NUM_ROUNDS = 20
+# Find the a common multiple of all modulus of all monkeys to do modulo arithmetic and avoid large numbers.
+commonMultiple = 1
+for monkey in monkeys:
+    commonMultiple = commonMultiple * monkey.modulus
+
+print(commonMultiple)
+
+NUM_ROUNDS = 10_000
 for i in range(NUM_ROUNDS):
+    print("round", i)
     for monkey in monkeys:
-        monkey.takeOneTurn()
+        monkey.takeOneTurn(commonMultiple)
 
 # Find top two monkeys with most number of items inspected.
 topMonkeys = sorted(monkeys, key=lambda monkey: monkey.numberItemsInspected, reverse=True)[:2]
