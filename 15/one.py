@@ -39,34 +39,36 @@ def numImpossiblePositions(y: int, filepath: Path) -> int:
         beacons.add((bx, by))
 
 
-    # Go to the row
-    # For each non-beacon position, calculate the manhatten distance to each sensor.
-    # Since each sensor already has a closest beacon, we can calculate the smallest manhatten distance for this sensor.
-    # Compare the smallest manhatten distance to the manhatten distance from the current position to the sensor. If the current position is closer, then it is impossible.
-    # If the position is impossible, increment the counter and move on to the next column. After checking against all sensors, if the position is still possible, then move on to the next column.
+    # We can find the x range of impossible positions for each sensor on the desired y value.
+    # We can then sort the ranges by the start of the range and merge overlapping ranges.
+    # The number of impossible positions is the sum of the lengths of the ranges, minus any beacons in the ranges.
 
-
-    numPositions = 0
-
-    for x in range(gridLeft, gridRight + 1):
-        if (x, y) in beacons:
-            print("B", end="")
+    ranges = []
+    for sx, sy, manhattenDistance in sensors:
+        xDisplacement = manhattenDistance - abs(sy - y)
+        if xDisplacement < 0:
             continue
-        isImpossible = False
-        for sensor in sensors:
-            manhattenDistance = abs(x - sensor[0]) + abs(y - sensor[1])
-            if manhattenDistance <= sensor[2]:
-                numPositions += 1
-                isImpossible = True
-                break
-        if isImpossible:
-            print("#", end="")
+        xRange = (sx - xDisplacement, sx + xDisplacement)
+        ranges.append(xRange)
+    
+    ranges.sort(key=lambda x: x[0])
+    mergedRanges = []
+    for xRange in ranges:
+        if not mergedRanges or xRange[0] > mergedRanges[-1][1]:
+            mergedRanges.append(xRange)
         else:
-            print(".", end="")
-    print()
-    return numPositions
+            mergedRanges[-1] = (mergedRanges[-1][0], max(mergedRanges[-1][1], xRange[1]))
+    
+    numImpossiblePositions = 0
+    for xRange in mergedRanges:
+        for bx, by in beacons:
+            if bx >= xRange[0] and bx <= xRange[1] and by == y:
+                numImpossiblePositions -= 1
 
+        numImpossiblePositions += xRange[1] - xRange[0] + 1
+    
+    return(numImpossiblePositions)
 
 # assert(numImpossiblePositions(10, here/"test.txt") == 26)
-# print(numImpossiblePositions(2_000_000, here/"input.txt"))
-print(numImpossiblePositions(10, here/"test.txt"))
+print(numImpossiblePositions(2_000_000, here/"input.txt"))
+# print(numImpossiblePositions(10, here/"test.txt"))
